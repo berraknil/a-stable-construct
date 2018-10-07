@@ -1,5 +1,6 @@
 function init() {
   const scene = new THREE.Scene()
+  var clock = new THREE.Clock()
 
   const camera = new THREE.PerspectiveCamera(
     45,
@@ -8,12 +9,12 @@ function init() {
     1000
   )
 
-  camera.position.z = 25
-  camera.position.x = 25
-  camera.position.y = 18
+  camera.position.z = 60
+  camera.position.x = 60
+  camera.position.y = 0
   camera.lookAt(scene.position)
 
-  var geometry = new THREE.BoxGeometry(5, 5, 5)
+  var geometry = new THREE.BoxGeometry(10, 10, 10)
   var material = new THREE.MeshPhongMaterial({
     // color: 0xffffff,
     emissive: 0xff69b4,
@@ -28,6 +29,17 @@ function init() {
   // var light = new THREE.AmbientLight(0xffffff) // soft white light
   // scene.add(light)
 
+  var planeGeometry = new THREE.PlaneGeometry(300, 300, 60, 60)
+  var planeMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff })
+  planeMaterial.side = THREE.DoubleSide
+  var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+  // plane.receiveShadow = true
+  // plane.castShadow = true
+  plane.rotation.x = Math.PI / 2
+  plane.rotation.z = Math.PI / 4
+  plane.position.y = -12
+  scene.add(plane)
+
   var spotLight = new THREE.SpotLight(0xffffff)
   spotLight.position.set(20, 1, 20)
 
@@ -36,18 +48,18 @@ function init() {
   spotLight.shadow.mapSize.width = 1024
   spotLight.shadow.mapSize.height = 1024
 
-  spotLight.shadow.camera.near = 500
+  spotLight.shadow.camera.near = 50
   spotLight.shadow.camera.far = 4000
   spotLight.shadow.camera.fov = 30
 
   scene.add(spotLight)
 
   var spotLight2 = new THREE.SpotLight(0x01f7f7)
-  spotLight2.position.set(-10, 1, -10)
+  spotLight2.position.set(-20, 1, -20)
   // spotLight2.castShadow = true
   spotLight2.shadow.mapSize.width = 1024
   spotLight2.shadow.mapSize.height = 1024
-  spotLight2.shadow.camera.near = 500
+  spotLight2.shadow.camera.near = 50
   spotLight2.shadow.camera.far = 4000
   spotLight2.shadow.camera.fov = 30
 
@@ -98,13 +110,13 @@ function init() {
 
   // console.log(audioLoader)
   // console.log(sound)
-  // this.sound.offset = 60
+  // this.sound.offset = 160
   //Get the average frequency of the sound
 
   const playbackCtrl = new function() {
     this.toggle = () => {
       if (!sound.isPlaying) {
-        sound.startTime = 30
+        // sound.offset = 30
         sound.play()
 
         console.log('now playing')
@@ -115,7 +127,7 @@ function init() {
     }
     this.stop = () => {
       sound.stop()
-
+      sound.offset = 30
       // sound.startTime = 150
       console.log('playback stopped, playhead at 0')
     }
@@ -152,7 +164,9 @@ function init() {
 
   var cam = gui.addFolder('Camera')
   cam.add(options.camera, 'speed', 0, 0.001).listen()
+  cam.add(camera.position, 'x', 0, 100).listen()
   cam.add(camera.position, 'y', 0, 100).listen()
+  cam.add(camera.position, 'z', 0, 100).listen()
   cam.open()
 
   var velocity = gui.addFolder('Velocity')
@@ -191,21 +205,36 @@ function init() {
   console.log(cube.material.emissiveIntensity)
   console.log(sound)
   const render = () => {
-    // console.log(sound.context.currentTime)
     requestAnimationFrame(render)
     controls.update()
-
+    let elapsedTime = clock.getElapsedTime()
     let data = analyser.getFrequencyData()
     let freq = analyser.getAverageFrequency()
     // cube.rotation.z += 0.01
+    // console.log(
+    //   `${data[60]}
+    // ${data[70]}
+    // ${data[80]}
+    // ${data[90]}
+    // ${data[10]}`
+    // )
     cube.rotation.x += 0.01
     cube.rotation.z += 0.01
     cube2.rotation.x -= 0.01
     cube2.rotation.z -= 0.01
     cube.material.emissiveIntensity = data[300] / 100
+    // spotLight.intensity = data[10] / 100
     spotLight.intensity = data[50] / 100
-    spotLight2.intensity = data[150] / 100
+    // spotLight2.intensity = data[50] / 100
+    spotLight2.intensity = data[100] / 100
+    plane.geometry.vertices.forEach((vertex, i) => {
+      vertex.z += Math.sin(elapsedTime + i * 0.1) * 0.05
+    })
+    plane.geometry.verticesNeedUpdate = true
 
+    // else {
+    //   camera.position.y -= 0.1
+    // }
     // cube.scale.z = data[50] / 100
     // cube.scale.y = data[50] / 100
     renderer.render(scene, camera)
